@@ -4,6 +4,7 @@ from typing import List, Annotated
 from ..database import get_session
 from ..schemas import IngredienteRead, IngredienteCreate
 from ..services.ingrediente_service import IngredienteService
+from ..uow.unit_of_work import UnitOfWork
 
 router = APIRouter(prefix="/ingredientes", tags=["Ingredientes"])
 
@@ -21,8 +22,9 @@ def create_ingrediente(
     ingrediente: IngredienteCreate,
     session: Session = Depends(get_session)
 ):
-    service = IngredienteService(session)
-    return service.create(ingrediente)
+    with UnitOfWork(session) as uow:
+        service = IngredienteService(uow.session)
+        return service.create(ingrediente)
 
 @router.put("/{ingrediente_id}", response_model=IngredienteRead)
 def update_ingrediente(
@@ -30,13 +32,15 @@ def update_ingrediente(
     ingrediente: IngredienteCreate,
     session: Session = Depends(get_session)
 ):
-    service = IngredienteService(session)
-    return service.update(ingrediente_id, ingrediente)
+    with UnitOfWork(session) as uow:
+        service = IngredienteService(uow.session)
+        return service.update(ingrediente_id, ingrediente)
 
 @router.delete("/{ingrediente_id}", status_code=204)
 def delete_ingrediente(
     ingrediente_id: Annotated[int, Path(title="The ID of the ingrediente to delete")],
     session: Session = Depends(get_session)
 ):
-    service = IngredienteService(session)
-    service.delete(ingrediente_id)
+    with UnitOfWork(session) as uow:
+        service = IngredienteService(uow.session)
+        service.delete(ingrediente_id)

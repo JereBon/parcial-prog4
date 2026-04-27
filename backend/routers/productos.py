@@ -4,6 +4,7 @@ from typing import List, Annotated
 from ..database import get_session
 from ..schemas import ProductoRead, ProductoCreate
 from ..services.producto_service import ProductoService
+from ..uow.unit_of_work import UnitOfWork
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
 
@@ -21,8 +22,9 @@ def create_producto(
     producto: ProductoCreate,
     session: Session = Depends(get_session)
 ):
-    service = ProductoService(session)
-    return service.create(producto)
+    with UnitOfWork(session) as uow:
+        service = ProductoService(uow.session)
+        return service.create(producto)
 
 @router.put("/{producto_id}", response_model=ProductoRead)
 def update_producto(
@@ -30,13 +32,15 @@ def update_producto(
     producto: ProductoCreate,
     session: Session = Depends(get_session)
 ):
-    service = ProductoService(session)
-    return service.update(producto_id, producto)
+    with UnitOfWork(session) as uow:
+        service = ProductoService(uow.session)
+        return service.update(producto_id, producto)
 
 @router.delete("/{producto_id}", status_code=204)
 def delete_producto(
     producto_id: Annotated[int, Path(title="The ID of the producto to delete")],
     session: Session = Depends(get_session)
 ):
-    service = ProductoService(session)
-    service.delete(producto_id)
+    with UnitOfWork(session) as uow:
+        service = ProductoService(uow.session)
+        service.delete(producto_id)

@@ -4,6 +4,7 @@ from typing import List, Annotated
 from ..database import get_session
 from ..schemas import CategoriaRead, CategoriaCreate
 from ..services.categoria_service import CategoriaService
+from ..uow.unit_of_work import UnitOfWork
 
 router = APIRouter(prefix="/categorias", tags=["Categorias"])
 
@@ -21,8 +22,9 @@ def create_categoria(
     categoria: CategoriaCreate,
     session: Session = Depends(get_session)
 ):
-    service = CategoriaService(session)
-    return service.create(categoria)
+    with UnitOfWork(session) as uow:
+        service = CategoriaService(uow.session)
+        return service.create(categoria)
 
 @router.put("/{categoria_id}", response_model=CategoriaRead)
 def update_categoria(
@@ -30,13 +32,15 @@ def update_categoria(
     categoria: CategoriaCreate,
     session: Session = Depends(get_session)
 ):
-    service = CategoriaService(session)
-    return service.update(categoria_id, categoria)
+    with UnitOfWork(session) as uow:
+        service = CategoriaService(uow.session)
+        return service.update(categoria_id, categoria)
 
 @router.delete("/{categoria_id}", status_code=204)
 def delete_categoria(
     categoria_id: Annotated[int, Path(title="The ID of the category to delete")],
     session: Session = Depends(get_session)
 ):
-    service = CategoriaService(session)
-    service.delete(categoria_id)
+    with UnitOfWork(session) as uow:
+        service = CategoriaService(uow.session)
+        service.delete(categoria_id)

@@ -12,15 +12,14 @@ class CategoriaService:
 
     def get_by_id(self, categoria_id: int):
         categoria = self.session.get(Categoria, categoria_id)
-        if not categoria:
+        if not categoria or not categoria.is_active:
             raise HTTPException(status_code=404, detail="Categoria not found")
         return categoria
 
     def create(self, categoria_in: CategoriaCreate):
         categoria = Categoria.model_validate(categoria_in)
         self.session.add(categoria)
-        self.session.commit()
-        self.session.refresh(categoria)
+        self.session.flush()
         return categoria
 
     def update(self, categoria_id: int, categoria_in: CategoriaCreate):
@@ -28,13 +27,12 @@ class CategoriaService:
         categoria_data = categoria_in.model_dump(exclude_unset=True)
         categoria.sqlmodel_update(categoria_data)
         self.session.add(categoria)
-        self.session.commit()
-        self.session.refresh(categoria)
+        self.session.flush()
         return categoria
 
     def delete(self, categoria_id: int):
         categoria = self.get_by_id(categoria_id)
         categoria.is_active = False
         self.session.add(categoria)
-        self.session.commit()
+        self.session.flush()
         return categoria
